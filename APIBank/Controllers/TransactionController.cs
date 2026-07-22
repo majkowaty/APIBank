@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using APIBank.Model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APIBank.Controllers
@@ -6,21 +8,33 @@ namespace APIBank.Controllers
     public record MoneyTransferRequest(string FromAccountId, string ToAccountId, decimal Amount);
 
     [ApiController]
+    [Authorize]
     [Route("[controller]")]
     public class TransactionController : ControllerBase
     {
         private readonly InsideTransactionService _insideService;
         private readonly OutsideTransactionService _outsideService;
         private readonly IBankService _bankService;
+        private readonly AppDbContext _context;
 
         public TransactionController(
             InsideTransactionService insideService,
             OutsideTransactionService outsideService,
-            IBankService bankService)
+            IBankService bankService,
+            AppDbContext context)
         {
             _insideService = insideService;
             _outsideService = outsideService;
             _bankService = bankService;
+            _context = context;
+        }
+
+        private bool IsOwnerOf(string accountId)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null) return false;
+            var userId = int.Parse(userIdClaim);
+            return _context.Users.Any(u => u.Id == userId && u.ClientAccountId == accountId);
         }
 
         private ITransactionService ResolveService(string toAccountId) =>
@@ -33,6 +47,9 @@ namespace APIBank.Controllers
         [HttpPost("send")]
         public async Task<IActionResult> SendMoney([FromBody] MoneyTransferRequest request)
         {
+            if (!IsOwnerOf(request.FromAccountId))
+                return Forbid();
+
             var transaction = new Transaction
             {
                 FromAccountId = request.FromAccountId,

@@ -1,9 +1,11 @@
 using APIBank.Model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APIBank.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("[controller]")]
     public class BankController : ControllerBase
     {

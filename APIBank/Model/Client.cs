@@ -23,6 +23,9 @@ namespace APIBank.Model
         [ForeignKey(nameof(PrimaryCardNumber))]
         public Card? PrimaryCard { get; set; }
 
+        public int? UserId { get; set; }
+        public User? User { get; set; }
+
         public void AddCard(Card card)
         {
             Cards.Add(card);
