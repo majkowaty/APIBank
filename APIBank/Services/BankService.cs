@@ -96,8 +96,16 @@ public class BankService : IBankService
 
     public void DeleteCard(string cardNumber)
     {
-        var card = _context.Cards.Find(cardNumber)
+        var card = _context.Cards
+            .Include(c => c.Owner)
+            .FirstOrDefault(c => c.CardNumber == cardNumber)
             ?? throw new Exception($"Card {cardNumber} not found");
+
+        if (card.Owner?.PrimaryCardNumber == cardNumber)
+        {
+            card.Owner.PrimaryCardNumber = null;
+            card.Owner.PrimaryCard = null;
+        }
 
         _context.Cards.Remove(card);
         _context.SaveChanges();

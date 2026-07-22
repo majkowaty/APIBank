@@ -23,7 +23,9 @@ using Microsoft.EntityFrameworkCore;
         if (fromCard.Balance < transaction.Amount)
             throw new Exception("Insufficient balance");
 
-        await ReceiveMoney(transaction);
+        fromCard.Balance -= transaction.Amount;
+        toCard.Balance += transaction.Amount;
+        await _context.SaveChangesAsync();
         TransactionResponse(transaction);
     }
 

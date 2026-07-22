@@ -26,7 +26,10 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.EnsureCreated();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (app.Environment.IsDevelopment())
+        db.Database.EnsureDeleted();
+    db.Database.EnsureCreated();
 }
 
 if (app.Environment.IsDevelopment())

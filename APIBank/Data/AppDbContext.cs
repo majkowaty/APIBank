@@ -5,24 +5,26 @@ public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public DbSet<Client> Clients => Set<Client>();
-    public DbSet<Card> Cards => Set<Card>();
-    public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<Client> Clients { get; set; } = null!;
+    public DbSet<Card> Cards { get; set; } = null!;
+    public DbSet<Transaction> Transactions { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Relacja Client -> Cards (jeden do wielu)
+        // Client.Cards -> Card.Owner (jeden do wielu)
         modelBuilder.Entity<Client>()
             .HasMany(c => c.Cards)
             .WithOne(card => card.Owner)
             .HasForeignKey(card => card.AccountId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Relacja Client -> PrimaryCard (jeden do jednego, opcjonalna)
+        // Client.PrimaryCard -> Card (opcjonalne, FK po stronie Client)
+        // ClientSetNull: EF Core nulluje w pamieci przed SaveChanges (bezpieczne dla SQLite)
         modelBuilder.Entity<Client>()
             .HasOne(c => c.PrimaryCard)
             .WithMany()
             .HasForeignKey(c => c.PrimaryCardNumber)
-            .OnDelete(DeleteBehavior.SetNull);
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.ClientSetNull);
     }
 }
