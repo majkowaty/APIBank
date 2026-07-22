@@ -1,28 +1,50 @@
-public class InsideTransactionService : ITransactionService{
+using APIBank.Model;
+using Microsoft.EntityFrameworkCore;
 
-    public void SendMoney(Transaction transaction){
-        var fromAccount = _context.Accounts.FirstOrDefault(a => a.AccountId == transaction.FromAccountId);
-        var toAccount = _context.Accounts.FirstOrDefault(a => a.AccountId == transaction.ToAccountId);
-        if(fromAccount == null || toAccount == null){
+    public class InsideTransactionService : ITransactionService
+{
+    private readonly AppDbContext _context;
+
+    public InsideTransactionService(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task SendMoney(Transaction transaction)
+    {
+        var fromCard = await _context.Cards
+            .FirstOrDefaultAsync(c => c.AccountId == transaction.FromAccountId);
+        var toCard = await _context.Cards
+            .FirstOrDefaultAsync(c => c.AccountId == transaction.ToAccountId);
+
+        if (fromCard == null || toCard == null)
             throw new Exception("Account not found");
-        }
-        if(fromAccount.Balance < transaction.Amount){
+
+        if (fromCard.Balance < transaction.Amount)
             throw new Exception("Insufficient balance");
-        }
-        ReceiveMoney(transaction);
+
+        await ReceiveMoney(transaction);
         TransactionResponse(transaction);
     }
-    public void ReceiveMoney(Transaction transaction){
-        var fromAccount = _context.Accounts.FirstOrDefault(a => a.AccountId == transaction.FromAccountId);
-        var toAccount = _context.Accounts.FirstOrDefault(a => a.AccountId == transaction.ToAccountId);
-        if(fromAccount == null || toAccount == null){
+
+    public async Task ReceiveMoney(Transaction transaction)
+    {
+        var fromCard = await _context.Cards
+            .FirstOrDefaultAsync(c => c.AccountId == transaction.FromAccountId);
+        var toCard = await _context.Cards
+            .FirstOrDefaultAsync(c => c.AccountId == transaction.ToAccountId);
+
+        if (fromCard == null || toCard == null)
             throw new Exception("Account not found");
-        }
-        fromAccount.Balance -= transaction.Amount;
-        toAccount.Balance += transaction.Amount;
-        _context.SaveChanges();
+
+        fromCard.Balance -= transaction.Amount;
+        toCard.Balance += transaction.Amount;
+        await _context.SaveChangesAsync();
     }
-    public void TransactionResponse(Transaction transaction){
-        Console.WriteLine($"Transakcja {transaction.TransactionId}: {transaction.Amount} z konta {transaction.FromAccountId} na konto {transaction.ToAccountId} ({transaction.TransactionDate}).");
+
+    public void TransactionResponse(Transaction transaction)
+    {
+        Console.WriteLine($"Transakcja {transaction.TransactionId}: {transaction.Amount} " +
+            $"z konta {transaction.FromAccountId} na konto {transaction.ToAccountId} ({transaction.TransactionDate}).");
     }
 }

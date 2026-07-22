@@ -8,6 +8,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddScoped<IBankService, BankService>();
+
 var app = builder.Build();
 
 builder.Services.AddScoped<ITransactionService, PbTransactionService>();

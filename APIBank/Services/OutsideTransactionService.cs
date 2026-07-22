@@ -1,76 +1,83 @@
-public class OutsideTransactionService : ITransactionService{
-private readonly HttpClient _httpClient;
-public OutsideTransactionService(HttpClient httpClient)
-{
-    _httpClient = httpClient;
-}
+using APIBank.Model;
+using APIBank.Model.Transfers;
+using Microsoft.EntityFrameworkCore;
 
-    public async Task SendMoney(Transaction transaction){
-        var fromAccount = _context.Accounts.FirstOrDefault(a => a.AccountId == transaction.FromAccountId);
-        
-        if (fromAccount == null){
+public class OutsideTransactionService : ITransactionService
+{
+    private readonly AppDbContext _context;
+    private readonly HttpClient _httpClient;
+
+    public OutsideTransactionService(AppDbContext context, HttpClient httpClient)
+    {
+        _context = context;
+        _httpClient = httpClient;
+    }
+
+    public async Task SendMoney(Transaction transaction)
+    {
+        var fromCard = await _context.Cards
+            .FirstOrDefaultAsync(c => c.AccountId == transaction.FromAccountId);
+
+        if (fromCard == null)
             throw new Exception("Account not found");
-        }
-        
-        if (fromAccount.Balance < transaction.Amount){
+
+        if (fromCard.Balance < transaction.Amount)
             throw new Exception("Insufficient balance");
-        }
-        
-        var transferRequest = new TransferRequestDTO{
+
+        var transferRequest = new TransferRequestDTO
+        {
             FromAccountId = transaction.FromAccountId,
             ToAccountId = transaction.ToAccountId,
             Amount = transaction.Amount,
             TransactionId = transaction.TransactionId
         };
 
-
-        TransferResponse? result;
-        try{
+        TransferResponse result;
+        try
+        {
             HttpResponseMessage response = await _httpClient.PostAsJsonAsync("/api/transfers", transferRequest);
 
-            if (!response.IsSuccessStatusCode){
+            if (!response.IsSuccessStatusCode)
                 throw new Exception($"Failed to send money: {response.StatusCode}");
-            }
 
-            result = await response.Content.ReadFromJsonAsync<TransferResponseDTO>();
-            if (result == null){
-                throw new Exception("Failed to send money");
-            }
+            var dto = await response.Content.ReadFromJsonAsync<TransferResponse>();
+            if (dto == null)
+                throw new Exception("Failed to send money: empty response");
 
-            if (!result.Accepted || result.Reason != null){
-                throw new Exception(result.Reason);
-            }
-        catch (HttpRequestException){
-            throw new Exception("Failed to connect to the outside bank");
-            }
-        catch (TaskCanceledException){
-            throw new Exception("Request timed out");
-            }
-
-            if (result != null && result.Accepted)
-            {
-                fromAccount.Balance -= transaction.Amount;
-                _context.SaveChanges();
-                TransactionResponse(transaction);
-            }
-            else{
-                throw new Exception(result?.Reason);
-            }
-    }
-
-    public void ReceiveMoney(Transaction transaction){
-        var toAccount = _context.Accounts.FirstOrDefault(a => a.AccountId == transaction.ToAccountId);
-
-        if (toAccount == null)
-        {
-            throw new Exception("Account not found");
+            result = dto;
         }
-        toAccount.Balance += transaction.Amount;
-        _context.SaveChanges();
+        catch (HttpRequestException)
+        {
+            throw new Exception("Failed to connect to the outside bank");
+        }
+        catch (TaskCanceledException)
+        {
+            throw new Exception("Request timed out");
+        }
+
+        if (!result.Accepted)
+            throw new Exception(result.Reason ?? "Transfer rejected");
+
+        fromCard.Balance -= transaction.Amount;
+        await _context.SaveChangesAsync();
+        TransactionResponse(transaction);
     }
-    public void TransactionResponse(Transaction transaction){
+
+    public async Task ReceiveMoney(Transaction transaction)
+    {
+        var toCard = await _context.Cards
+            .FirstOrDefaultAsync(c => c.AccountId == transaction.ToAccountId);
+
+        if (toCard == null)
+            throw new Exception("Account not found");
+
+        toCard.Balance += transaction.Amount;
+        await _context.SaveChangesAsync();
+    }
+
+    public void TransactionResponse(Transaction transaction)
+    {
         Console.WriteLine($"[OUTSIDE] Transakcja {transaction.TransactionId}: " +
-        $"{transaction.Amount} z {transaction.FromAccountId} do {transaction.ToAccountId}.");
+            $"{transaction.Amount} z {transaction.FromAccountId} do {transaction.ToAccountId}.");
     }
-}
 }

@@ -7,6 +7,8 @@ namespace APIBank.Model
     {
         private static readonly Random _rand = new Random();
 
+        public static string CardFirst4Numbers { get; } = "6767";
+
         [Key]
         public string CardNumber { get; set; } = string.Empty;
 
@@ -47,7 +49,7 @@ namespace APIBank.Model
 
         private static string GenerateCardNumber()
         {
-            String CardNumber = Bank.CardFirst4Numbers;
+            String CardNumber = CardFirst4Numbers;
             for (int i = 0; i < 11; i++)
             {
                 CardNumber += _rand.Next(0, 10);
