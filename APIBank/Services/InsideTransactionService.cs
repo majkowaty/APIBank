@@ -29,15 +29,12 @@ using Microsoft.EntityFrameworkCore;
 
     public async Task ReceiveMoney(Transaction transaction)
     {
-        var fromCard = await _context.Cards
-            .FirstOrDefaultAsync(c => c.AccountId == transaction.FromAccountId);
         var toCard = await _context.Cards
             .FirstOrDefaultAsync(c => c.AccountId == transaction.ToAccountId);
 
-        if (fromCard == null || toCard == null)
+        if (toCard == null)
             throw new Exception("Account not found");
 
-        fromCard.Balance -= transaction.Amount;
         toCard.Balance += transaction.Amount;
         await _context.SaveChangesAsync();
     }

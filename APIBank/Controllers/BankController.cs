@@ -38,12 +38,14 @@ namespace APIBank.Controllers
             return CreatedAtAction(nameof(GetClient), new { accountId = client.AccountId }, client);
         }
 
+        public record UpdateClientRequest(string FirstName, string LastName);
+
         [HttpPut("clients/{accountId}")]
-        public IActionResult UpdateClient(string accountId, [FromQuery] string firstName, [FromQuery] string lastName)
+        public IActionResult UpdateClient(string accountId, [FromBody] UpdateClientRequest request)
         {
             try
             {
-                _bankService.UpdateClient(accountId, firstName, lastName);
+                _bankService.UpdateClient(accountId, request.FirstName, request.LastName);
                 return NoContent();
             }
             catch (Exception ex)

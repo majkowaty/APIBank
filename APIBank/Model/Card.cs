@@ -19,7 +19,7 @@ namespace APIBank.Model
 
         public int CVV { get; set; }
         public decimal Balance { get; set; }
-        public DateOnly ExpirationDate { get; }
+        public DateOnly ExpirationDate { get; private set; }
 
         private Card() { }
 
