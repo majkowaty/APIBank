@@ -1,5 +1,8 @@
-public class TransferResponse
+namespace APIBank.Model.Transfers
 {
-    public bool Accepted { get; set; }
-    public string? Reason { get; set; }
+    public class TransferResponse
+    {
+        public bool Accepted { get; set; }
+        public string? Reason { get; set; }
+    }
 }
