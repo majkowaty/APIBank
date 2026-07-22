@@ -12,7 +12,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         ?? "Data Source=bank.db"));
 
 builder.Services.AddScoped<IBankService, BankService>();
-builder.Services.AddScoped<ITransactionService, InsideTransactionService>();
+builder.Services.AddScoped<InsideTransactionService>();
 
 builder.Services.AddHttpClient<OutsideTransactionService>(client =>
 {

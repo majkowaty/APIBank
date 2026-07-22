@@ -5,6 +5,8 @@ namespace APIBank.Model
 {
     public class Client
     {
+        public const string AccountPrefix = "4269";
+
         [Key]
         public string AccountId { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
@@ -57,7 +59,7 @@ namespace APIBank.Model
 
         private static string GenerateAccountId()
         {
-            string accountId = "4269";
+            string accountId = AccountPrefix;
             for (int i = 0; i < 22; i++)
             {
                 accountId += _rand.Next(0, 10);

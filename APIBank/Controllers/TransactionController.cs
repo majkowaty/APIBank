@@ -9,14 +9,24 @@ namespace APIBank.Controllers
     [Route("[controller]")]
     public class TransactionController : ControllerBase
     {
-        private readonly ITransactionService _transactionService;
+        private readonly InsideTransactionService _insideService;
+        private readonly OutsideTransactionService _outsideService;
         private readonly IBankService _bankService;
 
-        public TransactionController(ITransactionService transactionService, IBankService bankService)
+        public TransactionController(
+            InsideTransactionService insideService,
+            OutsideTransactionService outsideService,
+            IBankService bankService)
         {
-            _transactionService = transactionService;
+            _insideService = insideService;
+            _outsideService = outsideService;
             _bankService = bankService;
         }
+
+        private ITransactionService ResolveService(string toAccountId) =>
+            toAccountId.StartsWith(Client.AccountPrefix)
+                ? _insideService
+                : _outsideService;
 
         // ── Send / Receive ────────────────────────────────────────────────────
 
@@ -33,9 +43,10 @@ namespace APIBank.Controllers
 
             try
             {
-                await _transactionService.SendMoney(transaction);
+                var service = ResolveService(request.ToAccountId);
+                await service.SendMoney(transaction);
                 _bankService.AddTransaction(transaction);
-                _transactionService.TransactionResponse(transaction);
+                service.TransactionResponse(transaction);
                 return Ok(new { message = "Transfer completed", transaction });
             }
             catch (Exception ex)
@@ -57,9 +68,10 @@ namespace APIBank.Controllers
 
             try
             {
-                await _transactionService.ReceiveMoney(transaction);
+                var service = ResolveService(request.ToAccountId);
+                await service.ReceiveMoney(transaction);
                 _bankService.AddTransaction(transaction);
-                _transactionService.TransactionResponse(transaction);
+                service.TransactionResponse(transaction);
                 return Ok(new { message = "Funds received", transaction });
             }
             catch (Exception ex)
