@@ -14,18 +14,15 @@ using Microsoft.EntityFrameworkCore;
     {
         var fromCard = await _context.Cards
             .FirstOrDefaultAsync(c => c.AccountId == transaction.FromAccountId);
-        var toCard = await _context.Cards
-            .FirstOrDefaultAsync(c => c.AccountId == transaction.ToAccountId);
 
-        if (fromCard == null || toCard == null)
+        if (fromCard == null)
             throw new Exception("Account not found");
 
         if (fromCard.Balance < transaction.Amount)
             throw new Exception("Insufficient balance");
 
         fromCard.Balance -= transaction.Amount;
-        toCard.Balance += transaction.Amount;
-        await _context.SaveChangesAsync();
+        await ReceiveMoney(transaction);
         TransactionResponse(transaction);
     }
 

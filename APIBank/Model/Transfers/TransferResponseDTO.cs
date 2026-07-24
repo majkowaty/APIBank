@@ -1,6 +1,6 @@
 namespace APIBank.Model.Transfers
 {
-    public class TransferResponse
+    public class TransferResponseDTO
     {
         public bool Accepted { get; set; }
         public string? Reason { get; set; }

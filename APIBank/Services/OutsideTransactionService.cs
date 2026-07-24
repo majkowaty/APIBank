@@ -32,7 +32,7 @@ public class OutsideTransactionService : ITransactionService
             TransactionId = transaction.TransactionId
         };
 
-        TransferResponse result;
+        TransferResponseDTO? result = null;
         try
         {
             HttpResponseMessage response = await _httpClient.PostAsJsonAsync("/api/transfers", transferRequest);
@@ -40,11 +40,13 @@ public class OutsideTransactionService : ITransactionService
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"Failed to send money: {response.StatusCode}");
 
-            var dto = await response.Content.ReadFromJsonAsync<TransferResponse>();
+            var dto = await response.Content.ReadFromJsonAsync<TransferResponseDTO?>();  
             if (dto == null)
                 throw new Exception("Failed to send money: empty response");
 
             result = dto;
+        } catch (JsonException) {
+            throw new Exception("Failed to send money: invalid response");
         }
         catch (HttpRequestException)
         {
